@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>YouTube 轉 MP3</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f13;
+      --card: #1a1a22;
+      --border: #2e2e3e;
+      --accent: #e8c96d;
+      --accent2: #c9a84c;
+      --text: #f0ede8;
+      --muted: #8a8799;
+      --error: #e06b6b;
+      --success: #6bbd8e;
+    }
+
+    html, body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, 'PingFang TC', 'Helvetica Neue', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    .logo {
+      font-size: 48px;
+      margin-bottom: 12px;
+      line-height: 1;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: var(--muted);
+      margin-bottom: 48px;
+      text-align: center;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 540px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 12px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      height: 60px;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 16px;
+      padding: 0 20px;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--muted);
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      height: 68px;
+      background: var(--accent);
+      color: #0f0f13;
+      border: none;
+      border-radius: 14px;
+      font-size: 20px;
+      font-weight: 700;
+      margin-top: 20px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      -webkit-appearance: none;
+    }
+
+    .btn:active { transform: scale(0.97); }
+    .btn:hover { background: var(--accent2); }
+
+    .btn:disabled {
+      background: var(--border);
+      color: var(--muted);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* 狀態區 */
+    .status-box {
+      margin-top: 28px;
+      display: none;
+    }
+
+    .status-box.visible { display: block; }
+
+    .progress-bar-wrap {
+      background: var(--border);
+      border-radius: 99px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    .status-msg {
+      font-size: 17px;
+      color: var(--text);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .status-msg.error { color: var(--error); }
+    .status-msg.success { color: var(--success); }
+
+    /* 下載按鈕 */
+    .dl-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      height: 64px;
+      background: var(--success);
+      color: #0f0f13;
+      border: none;
+      border-radius: 14px;
+      font-size: 19px;
+      font-weight: 700;
+      margin-top: 20px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: opacity 0.15s, transform 0.1s;
+      -webkit-appearance: none;
+    }
+
+    .dl-btn:active { transform: scale(0.97); opacity: 0.9; }
+
+    .spinner {
+      display: inline-block;
+      width: 22px;
+      height: 22px;
+      border: 3px solid rgba(15,15,19,0.3);
+      border-top-color: #0f0f13;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .tip {
+      margin-top: 24px;
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    /* iPad 優化 */
+    @media (min-width: 768px) {
+      h1 { font-size: 34px; }
+      .card { padding: 40px 40px; }
+      input[type="text"] { font-size: 18px; }
+      .btn { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <div class="logo">🎵</div>
+  <h1>YouTube 轉 MP3</h1>
+  <p class="subtitle">貼上連結，一鍵下載音樂</p>
+
+  <div class="card">
+    <label for="url-input">YouTube 網址</label>
+    <input
+      type="text"
+      id="url-input"
+      placeholder="https://www.youtube.com/watch?v=..."
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="none"
+      spellcheck="false"
+    />
+
+    <button class="btn" id="convert-btn" onclick="startConvert()">
+      ▶ 開始轉換
+    </button>
+
+    <div class="status-box" id="status-box">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+      <div class="status-msg" id="status-msg"></div>
+      <a class="dl-btn" id="dl-btn" style="display:none" href="#">
+        ⬇ 下載 MP3
+      </a>
+    </div>
+  </div>
+
+  <p class="tip">
+    僅供下載個人創作或公共版權音樂<br>
+    檔案於下載後自動刪除，不會儲存在伺服器
+  </p>
+</div>
+
+<script>
+  let pollInterval = null;
+
+  function setMsg(text, type = '') {
+    const el = document.getElementById('status-msg');
+    el.textContent = text;
+    el.className = 'status-msg' + (type ? ' ' + type : '');
+  }
+
+  function setProgress(pct) {
+    const num = parseFloat(pct) || 0;
+    document.getElementById('progress-bar').style.width = num + '%';
+  }
+
+  async function startConvert() {
+    const url = document.getElementById('url-input').value.trim();
+    if (!url) { alert('請先貼上 YouTube 網址'); return; }
+
+    const btn = document.getElementById('convert-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 處理中...';
+
+    const statusBox = document.getElementById('status-box');
+    statusBox.classList.add('visible');
+    document.getElementById('dl-btn').style.display = 'none';
+    setProgress(0);
+    setMsg('連線中...');
+
+    try {
+      const res = await fetch('/convert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        throw new Error(data.error || '發生錯誤');
+      }
+
+      pollStatus(data.task_id);
+
+    } catch (e) {
+      setMsg(e.message, 'error');
+      resetBtn();
+    }
+  }
+
+  function pollStatus(taskId) {
+    if (pollInterval) clearInterval(pollInterval);
+
+    pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch('/status/' + taskId);
+        const data = await res.json();
+
+        setMsg(data.message);
+        setProgress(data.progress);
+
+        if (data.status === 'done') {
+          clearInterval(pollInterval);
+          setProgress(100);
+          setMsg('✅ 轉換完成！', 'success');
+
+          const dlBtn = document.getElementById('dl-btn');
+          dlBtn.href = '/download/' + taskId;
+          dlBtn.style.display = 'flex';
+          resetBtn();
+        } else if (data.status === 'error') {
+          clearInterval(pollInterval);
+          setMsg(data.message, 'error');
+          resetBtn();
+        }
+      } catch (e) {
+        clearInterval(pollInterval);
+        setMsg('連線中斷，請重試', 'error');
+        resetBtn();
+      }
+    }, 1500);
+  }
+
+  function resetBtn() {
+    const btn = document.getElementById('convert-btn');
+    btn.disabled = false;
+    btn.innerHTML = '▶ 開始轉換';
+  }
+</script>
+</body>
+</html>
