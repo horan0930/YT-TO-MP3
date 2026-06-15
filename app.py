@@ -15,6 +15,7 @@ ip_tasks = {}
 DOWNLOAD_DIR = "/tmp/yt2mp3"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
+# 啟動時把 cookies 複製到可寫的 /tmp
 COOKIES_SRC = '/etc/secrets/cookies.txt'
 COOKIES_PATH = '/tmp/cookies.txt'
 if os.path.exists(COOKIES_SRC):
@@ -46,7 +47,7 @@ def download_task(task_id, url, output_path):
                 tasks[task_id]['message'] = '轉換成 MP3 中...'
 
     ydl_opts = {
-        'format': 'bestaudio/best',
+        'format': 'bestaudio/best/worstaudio',
         'outtmpl': output_path + '.%(ext)s',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
