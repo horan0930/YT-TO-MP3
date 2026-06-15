@@ -7,11 +7,8 @@ import yt_dlp
 
 app = Flask(__name__)
 
-# 簡單的任務狀態儲存（記憶體內，重啟會清空）
 tasks = {}
 tasks_lock = threading.Lock()
-
-# 限流：每個 IP 最多同時 1 個任務
 ip_tasks = {}
 
 DOWNLOAD_DIR = "/tmp/yt2mp3"
@@ -19,7 +16,6 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
 
 def cleanup_file(path, delay=60):
-    """下載完成後延遲刪除暫存檔"""
     def _delete():
         time.sleep(delay)
         try:
@@ -31,7 +27,6 @@ def cleanup_file(path, delay=60):
 
 
 def download_task(task_id, url, output_path):
-    """背景執行下載與轉換"""
     def progress_hook(d):
         with tasks_lock:
             if task_id not in tasks:
@@ -43,6 +38,8 @@ def download_task(task_id, url, output_path):
             elif d['status'] == 'finished':
                 tasks[task_id]['progress'] = '99%'
                 tasks[task_id]['message'] = '轉換成 MP3 中...'
+
+    COOKIES_PATH = '/etc/secrets/cookies.txt'
 
     ydl_opts = {
         'format': 'bestaudio/best',
@@ -56,6 +53,9 @@ def download_task(task_id, url, output_path):
         'quiet': True,
         'no_warnings': True,
     }
+
+    if os.path.exists(COOKIES_PATH):
+        ydl_opts['cookiefile'] = COOKIES_PATH
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
