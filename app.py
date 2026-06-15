@@ -10,16 +10,21 @@ app = Flask(__name__)
 
 tasks = {}
 tasks_lock = threading.Lock()
-ip_tasks = {}
 
 DOWNLOAD_DIR = "/tmp/yt2mp3"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 
-# 啟動時把 cookies 複製到可寫的 /tmp
-COOKIES_SRC = '/etc/secrets/cookies.txt'
+# 從環境變數寫入 cookies 檔案
 COOKIES_PATH = '/tmp/cookies.txt'
-if os.path.exists(COOKIES_SRC):
-    shutil.copy2(COOKIES_SRC, COOKIES_PATH)
+yt_cookies = os.environ.get('YT_COOKIES', '')
+if yt_cookies:
+    with open(COOKIES_PATH, 'w') as f:
+        f.write(yt_cookies)
+else:
+    # 嘗試從 Secret Files 複製
+    COOKIES_SRC = '/etc/secrets/cookies.txt'
+    if os.path.exists(COOKIES_SRC):
+        shutil.copy2(COOKIES_SRC, COOKIES_PATH)
 
 
 def cleanup_file(path, delay=60):
