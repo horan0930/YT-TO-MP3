@@ -3,6 +3,7 @@ import uuid
 import threading
 import time
 import shutil
+import sys
 from flask import Flask, request, jsonify, send_file, render_template
 import yt_dlp
 
@@ -17,14 +18,18 @@ os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 # 從環境變數寫入 cookies 檔案
 COOKIES_PATH = '/tmp/cookies.txt'
 yt_cookies = os.environ.get('YT_COOKIES', '')
+print(f"[COOKIES] YT_COOKIES length: {len(yt_cookies)}", flush=True)
 if yt_cookies:
     with open(COOKIES_PATH, 'w') as f:
         f.write(yt_cookies)
+    print(f"[COOKIES] Written to {COOKIES_PATH}", flush=True)
 else:
-    # 嘗試從 Secret Files 複製
     COOKIES_SRC = '/etc/secrets/cookies.txt'
     if os.path.exists(COOKIES_SRC):
         shutil.copy2(COOKIES_SRC, COOKIES_PATH)
+        print(f"[COOKIES] Copied from secret file", flush=True)
+    else:
+        print(f"[COOKIES] No cookies found!", flush=True)
 
 
 def cleanup_file(path, delay=60):
@@ -64,7 +69,9 @@ def download_task(task_id, url, output_path):
         'no_warnings': True,
     }
 
-    if os.path.exists(COOKIES_PATH):
+    cookies_exist = os.path.exists(COOKIES_PATH)
+    print(f"[DOWNLOAD] cookies file exists: {cookies_exist}", flush=True)
+    if cookies_exist:
         ydl_opts['cookiefile'] = COOKIES_PATH
 
     try:
