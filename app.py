@@ -2,6 +2,7 @@ import os
 import uuid
 import threading
 import time
+import shutil
 from flask import Flask, request, jsonify, send_file, render_template
 import yt_dlp
 
@@ -13,6 +14,11 @@ ip_tasks = {}
 
 DOWNLOAD_DIR = "/tmp/yt2mp3"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+COOKIES_SRC = '/etc/secrets/cookies.txt'
+COOKIES_PATH = '/tmp/cookies.txt'
+if os.path.exists(COOKIES_SRC):
+    shutil.copy2(COOKIES_SRC, COOKIES_PATH)
 
 
 def cleanup_file(path, delay=60):
@@ -38,8 +44,6 @@ def download_task(task_id, url, output_path):
             elif d['status'] == 'finished':
                 tasks[task_id]['progress'] = '99%'
                 tasks[task_id]['message'] = '轉換成 MP3 中...'
-
-    COOKIES_PATH = '/etc/secrets/cookies.txt'
 
     ydl_opts = {
         'format': 'bestaudio/best',
